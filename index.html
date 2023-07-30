@@ -3,6 +3,7 @@
     <head>
         <title>2017 Car Info</title>
         <script src="https://d3js.org/d3.v5.min.js"></script>
+
         <style>
             #container {
                 width: 800px;
@@ -35,10 +36,25 @@
                 margin-right: 16px;
             }
 
+            .annotation-note-title {
+            fill: black;
+            font-weight: bold;
+            }
+            .annotation-note-label {
+            fill: grey;
+            }
+            .annotation-note-bg {
+            fill: white;
+            fill-opacity: 0.5;
+            }
+
         </style>
     </head>
     <body>
+        
         <div id="container" >
+            <h2>Car Info</h2>
+            <p>This visualization shows the average city and highway MPG for car make, data collected in 2017.</p>
             <div id="vis"></div>
             <button id="prevButton">← Previous</button>
             <button id="nextButton">Next →</button>
@@ -46,36 +62,30 @@
                 Make: <select id="selectCarMake" style="display: none; margin-top: 10px;"></select>
                 # of Engine Cylinders: <select id="selectEngineCylinders" style="display: none; margin-top: 10px;"></select>
             </div>
-
-
         </div>
+
         <div id="tooltip" style="position: absolute; opacity: 0;"></div>
 
-
         <script>
-            // Load data
+            
             d3.csv("https://flunky.github.io/cars2017.csv").then(function(data) {
 
                 let tooltip = d3.select("#tooltip");
 
-                // Color scale
                 let color = d3.scaleOrdinal()
                     .domain(["Gasoline", "Diesel", "Electricity"])
                     .range(["#FFBF00", "#990f02", "#AFE1AF"]);
 
-                // Parse numerical values
                 data.forEach(function(d) {
                     d.AverageCityMPG = +d.AverageCityMPG;
                     d.AverageHighwayMPG = +d.AverageHighwayMPG;
                     d.EngineCylinders = +d.EngineCylinders;
                 });
 
-                // Define margin and dimensions
                 let margin = {top: 50, right: 50, bottom: 50, left: 50},
                     width = 800 - margin.left - margin.right,
                     height = 600 - margin.top - margin.bottom;
 
-                // Append the SVG object to your page
                 let svg = d3.select("#vis")
                   .append("svg")
                     .attr("width", width + margin.left + margin.right)
@@ -86,7 +96,6 @@
                     .attr("transform",
                           "translate(" + margin.left + "," + margin.top + ")");
 
-                // Define X and Y axes
                 let x = d3.scaleLinear()
                   .domain([0, d3.max(data, function(d) { return d.AverageCityMPG; })])
                   .range([ 0, width ]);
@@ -95,24 +104,20 @@
                   .range([ height, 0]);
 
                 function generateAxisForScatterPlot() {
-                    // X axis
                     svg.append("g")
                     .attr("transform", "translate(0," + height + ")")
                     .call(d3.axisBottom(x))
                     .attr("id", "xAxis");
                     
-                    // X axis label
                     svg.append("text")
                     .attr("transform", "translate(" + (width/2) + " ," + (height + margin.top + 20) + ")")  // Adjust as needed
                     .style("text-anchor", "middle")
                     .text("Average City MPG");
 
-                    // Y axis
                     svg.append("g")
                     .call(d3.axisLeft(y))
                     .attr("id", "yAxis");
 
-                    // Y axis label
                     svg.append("text")
                     .attr("transform", "rotate(-90)")
                     .attr("y", 0 - margin.left)
@@ -123,8 +128,7 @@
 
                 }
 
-                // Scene 1
-                function scene1() {
+                function scene2() {
 
                       svg.append('g')
                         .selectAll("dot")
@@ -133,25 +137,65 @@
                         .append("circle")
                             .attr("cx", function (d) { return x(d.AverageCityMPG); } )
                             .attr("cy", function (d) { return y(d.AverageHighwayMPG); } )
-                            .attr("r", 4)  // Reduced dot size
+                            .attr("r", 4)
                             .style("fill", function (d) { return color(d.Fuel) } )
+                            .style("opacity", 0.8)  
+                            .style("stroke", "black")  
+                            .style("stroke-width", 2)
                             .on("mouseover", function(d) {
+                                d3.select(this)
+                                    .attr("r", 10)
+                                    .style("stroke-width", 6);
                                 tooltip.style("opacity", 1)
                                 .html("Make: <b>" + d.Make + "</b><br/># of Engine Cylinders: <b>" + d.EngineCylinders + "</b><br/>Fuel: <b>" + d.Fuel + "</b><br/>City MPG: <b>" + d.AverageCityMPG + "</b><br/>Highway MPG: <b>" + d.AverageHighwayMPG + "</b>")
-                                .style("left", (event.pageX + 10) + "px")  // Adjusted X coordinate
+                                .style("left", (event.pageX + 10) + "px")
                                 .style("top", (event.pageY) + "px");
                             })
                             .on("mouseout", function(d) {
+                                d3.select(this) 
+                                    .attr("r", 4)  
+                                    .style("stroke-width", 2); 
                                 tooltip.style("opacity", 0);
                             });
+                            
+                        let lineStart = { 'x': 0, 'y': 46 - 0 };
+                        let lineEnd = { 'x': 46, 'y': 46 - 46 };
+
+                        svg.append("line")
+                            .style("stroke", "black")
+                            .style("stroke-dasharray", ("6, 2"))
+                            .style("stroke-width", "2")
+                            .attr("x1", x(lineStart.x))
+                            .attr("y1", y(lineStart.y))
+                            .attr("x2", x(lineEnd.x))
+                            .attr("y2", y(lineEnd.y));
+                                
+                        let multilineText = ["23 MPG or higher in combined", "EPA fuel economy is", "considered good gas mileage for your vehicle."];
+
+                        let text = svg.append("text")
+                            .attr("x", x(30))          
+                            .attr("y", y(80))
+                            .style("text-anchor", "middle")
+                            .style("font-size", "15px")
+                            .style("font-family", "Arial")
+                            .style("stroke", "#016064")
+                            .style("stroke-width", "2px")
+
+                        multilineText.forEach(function(d,i) {
+                            text.append("tspan")
+                                .attr("dy", i ? "1.2em" : 0)
+                                .attr("x", x(30))
+                                .text(d);
+                        });
+
 
                     generateAxisForScatterPlot();
 
+
                 }
 
-                // Scene 2
-                function scene2() {
-                    // Calculate average MPG for each car make
+                function scene1() {
+                    
                     let avgData = d3.nest()
                         .key(function(d) { return d.Make; })
                         .rollup(function(v) { 
@@ -162,15 +206,14 @@
                         })
                         .entries(data);
                     
-                    // Map avgData to match the required format for the bar chart
                     avgData = avgData.map(function(d) {
                         return {
                             Make: d.key,
-                            AverageMPG: (d.value.avgCityMPG + d.value.avgHighwayMPG) / 2  // Use the average of city and highway MPG
+                            AverageCityMPG: (d.value.avgCityMPG),
+                            AverageHighwayMPG: (d.value.avgHighwayMPG)
                         };
                     });
 
-                    // X axis
                     let x = d3.scaleBand()
                     .range([0, width])
                     .domain(avgData.map(function(d) { return d.Make; }))
@@ -183,46 +226,44 @@
                     .style("text-anchor", "end")
                     .attr("id", "xAxis");
 
-                    // Y axis
                     let y = d3.scaleLinear()
-                    .domain([0, d3.max(avgData, function(d) { return d.AverageMPG; })])
+                    .domain([0, d3.max(avgData, function(d) { return (d.AverageCityMPG+d.AverageHighwayMPG)/2; })])
                     .range([height, 0]);
                     svg.append("g")
                     .call(d3.axisLeft(y))
                     .attr("id", "yAxis");
 
-                    // Bars
                     svg.selectAll("mybar")
                     .data(avgData)
                     .enter()
                     .append("rect")
                         .attr("x", function(d) { return x(d.Make); })
-                        .attr("y", function(d) { return y(d.AverageMPG); })
+                        .attr("y", function(d) { return y((d.AverageCityMPG+d.AverageHighwayMPG)/2); })
                         .attr("width", x.bandwidth())
-                        .attr("height", function(d) { return height - y(d.AverageMPG); })
+                        .attr("height", function(d) { return height - y((d.AverageCityMPG+d.AverageHighwayMPG)/2); })
                         .attr("fill", "#69b3a2")
+                        .on("mouseover", function(d) {
+                            console.log(d);
+                                tooltip.style("opacity", 1)
+                                .html("Make: <b>" + d.Make + "</b><br/>Average City MPG: <b>" + d.AverageCityMPG + "</b><br/>Average Highway MPG: <b>" + d.AverageHighwayMPG + "</b>")
+                                .style("left", (event.pageX + 10) + "px")
+                                .style("top", (event.pageY) + "px");
+                            })
+                            .on("mouseout", function(d) {
+                                tooltip.style("opacity", 0);
+                            });
                     
 
                 }
 
-                // Scene 3
                 function scene3() {
-                    // Get selected car make
                     let selectedMake = d3.select("#selectCarMake").property("value");
 
-                    // Get selected engine cylinders
                     let selectedCylinders = d3.select("#selectEngineCylinders").property("value");
 
-                    let filteredData;
-                    if (selectedCylinders === "All") {
-                        // If "All" is selected, don't filter by engine cylinders
-                        filteredData = data.filter(function(d) { return d.Make === selectedMake; });
-                    } else {
-                        // If a specific number of cylinders is selected, filter by both car make and engine cylinders
-                        filteredData = data.filter(function(d) { return d.Make === selectedMake && d.EngineCylinders === +selectedCylinders; });
-                    }
+                    let filteredData = data.filter(function(d) { return d.Make === selectedMake && d.EngineCylinders === +selectedCylinders; });
+                   
 
-                    // Add dots
                     svg.append('g')
                     .selectAll("dot")
                     .data(filteredData)
@@ -230,47 +271,82 @@
                     .append("circle")
                         .attr("cx", function (d) { return x(d.AverageCityMPG); } )
                         .attr("cy", function (d) { return y(d.AverageHighwayMPG); } )
-                        .attr("r", 10)  // Reduced dot size
+                        .attr("r", 10)
                         .style("fill", function (d) { return color(d.Fuel) } )
+                        .style("opacity", 0.8) 
+                        .style("stroke", "black")  
+                        .style("stroke-width", 2) 
                         .on("mouseover", function(d) {
-                                tooltip.style("opacity", 1)
-                                .html("Make: <b>" + d.Make + "</b><br/># of Engine Cylinders: <b>" + d.EngineCylinders + "</b><br/>Fuel: <b>" + d.Fuel + "</b><br/>City MPG: <b>" + d.AverageCityMPG + "</b><br/>Highway MPG: <b>" + d.AverageHighwayMPG + "</b>")
-                                .style("left", (event.pageX + 10) + "px")  // Adjusted X coordinate
-                                .style("top", (event.pageY) + "px");
-                            })
-                            .on("mouseout", function(d) {
-                                tooltip.style("opacity", 0);
-                            });
+                            d3.select(this) 
+                                .attr("r", 15)  
+                                .style("stroke-width", 3); 
+                            tooltip.style("opacity", 1)
+                            .html("Make: <b>" + d.Make + "</b><br/># of Engine Cylinders: <b>" + d.EngineCylinders + "</b><br/>Fuel: <b>" + d.Fuel + "</b><br/>City MPG: <b>" + d.AverageCityMPG + "</b><br/>Highway MPG: <b>" + d.AverageHighwayMPG + "</b>")
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY) + "px");
+                        })
+                        .on("mouseout", function(d) {
+                            d3.select(this)
+                                .attr("r", 10) 
+                                .style("stroke-width", 2); 
+                            tooltip.style("opacity", 0);
+                        });
+
+                        let lineStart = { 'x': 0, 'y': 46 - 0 };
+                        let lineEnd = { 'x': 46, 'y': 46 - 46 };
+
+                        svg.append("line")
+                            .style("stroke", "black")
+                            .style("stroke-dasharray", ("6, 2"))
+                            .style("stroke-width", "2")
+                            .attr("x1", x(lineStart.x))
+                            .attr("y1", y(lineStart.y))
+                            .attr("x2", x(lineEnd.x))
+                            .attr("y2", y(lineEnd.y));
+                                
+                        let multilineText = ["23 MPG or higher in combined", "EPA fuel economy is", "considered good gas mileage for your vehicle."];
+
+                        let text = svg.append("text")
+                            .attr("x", x(30))          
+                            .attr("y", y(80))
+                            .style("text-anchor", "middle")
+                            .style("font-size", "15px")
+                            .style("font-family", "Arial")
+                            .style("stroke", "#016064")
+                            .style("stroke-width", "2px")
+
+                        multilineText.forEach(function(d,i) {
+                            text.append("tspan")
+                                .attr("dy", i ? "1.2em" : 0)
+                                .attr("x", x(30))
+                                .text(d);
+                        });
 
                     generateAxisForScatterPlot();
                 }
 
-                // Initial scene
                 scene1();
                 d3.select("#prevButton").style("display", "none");
 
-                // Transition between scenes
-                let scenes = [scene1, scene2, scene3];  // Add other scenes here
+                let scenes = [scene1, scene2, scene3];
                 let currentScene = 0;
 
                 d3.select("#nextButton").on("click", function() {
                     currentScene += 1;
 
-                    // Remove the SVG
                     d3.select("#myChart").remove();
 
-                    // Recreate the SVG and the group
                     svgContainer = d3.select("#vis")
                     .append("svg")
                         .attr("width", width + margin.left + margin.right)
                         .attr("height", height + margin.top + margin.bottom)
-                        .attr("id", "myChart");
+                        .attr("id", "myChart")
+                        .style("overflow", "inherit")
 
                     svg = svgContainer
                     .append("g")
                         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-                    // Show or hide dropdown menu
                     if (currentScene === 2) {
                         d3.select("#selectCarMake").style("display", "inline-block");
                         d3.select("#selectEngineCylinders").style("display", "inline-block");
@@ -281,36 +357,33 @@
                         d3.select("#selections").style("display", "none");
                     }
 
-                    // Draw next scene
+                    d3.select("#prevButton").style("display", "inline-block");
+
                     scenes[currentScene]();
 
-                    // Hide "Next" button if on the last scene
                     if (currentScene === scenes.length - 1) {
                         d3.select("#nextButton").style("display", "none");
                     }
 
-                    // Always show "Previous" button
-                    d3.select("#prevButton").style("display", "inline-block");
+
                 });
 
                 d3.select("#prevButton").on("click", function() {
                     currentScene -= 1;
 
-                    // Remove the SVG
                     d3.select("#myChart").remove();
 
-                    // Recreate the SVG and the group
                     svgContainer = d3.select("#vis")
                     .append("svg")
                         .attr("width", width + margin.left + margin.right)
                         .attr("height", height + margin.top + margin.bottom)
-                        .attr("id", "myChart");
+                        .attr("id", "myChart")
+                        .style("overflow", "inherit")
 
                     svg = svgContainer
                     .append("g")
                         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-                    // Show or hide dropdown menu
                     if (currentScene === 2) {
                         d3.select("#selectCarMake").style("display", "inline-block");
                         d3.select("#selectEngineCylinders").style("display", "inline-block");
@@ -321,21 +394,18 @@
                         d3.select("#selections").style("display", "none");
                     }
 
-                    // Draw the previous scene
+
+                    d3.select("#nextButton").style("display", "inline-block");
+
                     scenes[currentScene]();
 
-                    // Hide "Previous" button if on the first scene
                     if (currentScene === 0) {
                         d3.select("#prevButton").style("display", "none");
                     }
 
-                    // Always show "Next" button
-                    d3.select("#nextButton").style("display", "inline-block");
                 });
 
-
-               // Dropdown menu
-                let carMakes = [...new Set(data.map(function(d) { return d.Make; }))];  // Get unique car makes
+                let carMakes = [...new Set(data.map(function(d) { return d.Make; }))];
 
                 let dropdown = d3.select("#selectCarMake");
 
@@ -346,32 +416,25 @@
                     .text(function (d) { return d; });
 
                 dropdown.on("change", function() {
-                    // Clear SVG
                     svg.selectAll("*").remove();
 
-                    // Update engine cylinders dropdown
                     let selectedMake = d3.select("#selectCarMake").property("value");
                     let availableCylinders = [...new Set(data.filter(function(d) { return d.Make === selectedMake; }).map(function(d) { return d.EngineCylinders; }))];
 
                     let dropdownCylinders = d3.select("#selectEngineCylinders");
 
-                    // Remove old options
                     dropdownCylinders.selectAll("option").remove();
 
-                    // Add new options
                     dropdownCylinders.selectAll("option")
                         .data(availableCylinders.sort(function(a, b) { return a - b; }))
                         .enter()
                         .append("option")
                         .text(function (d) { return d; });
 
-                    // Draw Scene 3
                     scene3();
                 });
 
-                // Dropdown menu for engine cylinders
-                let engineCylinders = [...new Set(data.map(function(d) { return d.EngineCylinders; }))];  // Get unique engine cylinders
-
+                let engineCylinders = [4, 6];
                 let dropdownCylinders = d3.select("#selectEngineCylinders");
 
                 dropdownCylinders.selectAll("option")
@@ -380,18 +443,15 @@
                     .append("option")
                     .text(function (d) { return d; });
 
-                // Modify the 'change' event of the dropdown menu for engine cylinders
                 dropdownCylinders.on("change", function() {
-                    // Clear SVG
                     svg.selectAll("*").remove();
-
-                    // Draw Scene 3
                     scene3();
                 });
 
-
-
+                
             });
+
+            
         </script>
     </body>
 </html>
